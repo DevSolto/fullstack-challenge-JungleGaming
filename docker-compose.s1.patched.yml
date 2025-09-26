@@ -1,0 +1,204 @@
+services:
+  # Frontend React Application
+  web:
+    container_name: web
+    build:
+      context: .
+      dockerfile: ./apps/web/Dockerfile
+      target: development
+    working_dir: /app/apps/web
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: development
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/apps/web/node_modules
+    networks:
+      - challenge-network
+    depends_on:
+      api-gateway:
+        condition: service_started
+    command: npm run dev -- --host 0.0.0.0
+
+  # API Gateway (HTTP + WS)
+  api-gateway:
+    container_name: api-gateway
+    build:
+      context: .
+      dockerfile: ./apps/api-gateway/Dockerfile
+      target: development
+    working_dir: /app/apps/api-gateway
+    ports:
+      - "3001:3001"
+    environment:
+      NODE_ENV: development
+      PORT: 3001
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: challenge_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      RABBITMQ_URL: amqp://admin:admin@rabbitmq:5672
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/apps/api-gateway/node_modules
+    networks:
+      - challenge-network
+    depends_on:
+      db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    command: npm run dev
+
+  # Auth Service
+  auth-service:
+    container_name: auth-service
+    build:
+      context: .
+      dockerfile: ./apps/auth-service/Dockerfile
+      target: development
+    working_dir: /app/apps/auth-service
+    ports:
+      - "3002:3002"
+    environment:
+      NODE_ENV: development
+      PORT: 3002
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: challenge_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      RABBITMQ_URL: amqp://admin:admin@rabbitmq:5672
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/apps/auth-service/node_modules
+    networks:
+      - challenge-network
+    depends_on:
+      db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    command: npm run dev
+
+  # Tasks Service
+  tasks-service:
+    container_name: tasks-service
+    build:
+      context: .
+      dockerfile: ./apps/tasks-service/Dockerfile
+      target: development
+    working_dir: /app/apps/tasks-service
+    ports:
+      - "3003:3003"
+    environment:
+      NODE_ENV: development
+      PORT: 3003
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: challenge_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      RABBITMQ_URL: amqp://admin:admin@rabbitmq:5672
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/apps/tasks-service/node_modules
+    networks:
+      - challenge-network
+    depends_on:
+      db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    command: npm run dev
+
+  # Notifications Service
+  notifications-service:
+    container_name: notifications-service
+    build:
+      context: .
+      dockerfile: ./apps/notifications-service/Dockerfile
+      target: development
+    working_dir: /app/apps/notifications-service
+    ports:
+      - "3004:3004"
+    environment:
+      NODE_ENV: development
+      PORT: 3004
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: challenge_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      RABBITMQ_URL: amqp://admin:admin@rabbitmq:5672
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/apps/notifications-service/node_modules
+    networks:
+      - challenge-network
+    depends_on:
+      db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    command: npm run dev
+
+  # Postgres Database
+  db:
+    image: postgres:17.5-alpine3.21
+    container_name: db
+    ports:
+      - "5432:5432"
+    networks:
+      - challenge-network
+    restart: unless-stopped
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_PASSWORD: password
+      POSTGRES_USER: postgres
+      POSTGRES_DB: challenge_db
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB} -h localhost || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # RabbitMQ Broker
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    # Alternative (debian-based) if alpine keeps failing to pull:
+    # image: rabbitmq:3.13-management
+    platform: linux/amd64
+    container_name: rabbitmq
+    restart: unless-stopped
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    networks:
+      - challenge-network
+    environment:
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: admin
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD-SHELL", "rabbitmq-diagnostics -q ping || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  postgres_data:
+  rabbitmq_data:
+
+networks:
+  challenge-network:
+    driver: bridge
