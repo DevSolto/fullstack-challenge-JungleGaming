@@ -1,0 +1,235 @@
+{
+  "project": "Desafio Full-stack Júnior — Sistema de Gestão de Tarefas Colaborativo",
+  "timebox": {
+    "sprints": 7,
+    "duration_per_sprint_days": 2
+  },
+  "global": {
+    "definition_of_done": [
+      "Código versionado e subindo via docker compose up",
+      "Linters/formatadores passando",
+      "README da sprint com: o que foi feito, como rodar, prints/gifs",
+      "Swagger atualizado para rotas HTTP entregues na sprint",
+      "Logs sem segredos; variáveis sensíveis apenas em .env"
+    ],
+    "dependencies_overview": [
+      "S1 é base para todo o restante",
+      "S2 (Auth) é pré-requisito para S3–S5",
+      "S3 (Tasks) é pré-requisito para S4 (Notificações) e S5 (UI)",
+      "S6–S7 dependem de S1–S5 estáveis"
+    ]
+  },
+  "sprints": [
+    {
+      "id": "S1",
+      "name": "Fundações do Monorepo & DevX",
+      "objective": "Levantar esqueleto do projeto, DX e infra mínima para todos os serviços subirem.",
+      "concepts": [
+        "Turborepo (pipelines/caching)",
+        "Docker & docker-compose",
+        "Workspaces, scripts de Node",
+        "Versionamento de .env",
+        "Healthchecks"
+      ],
+      "deliverables": [
+        "Monorepo apps/ e packages/ funcional",
+        "docker-compose com Postgres 17 + RabbitMQ 3.13 e containers vazios dos 4 apps",
+        "Pacotes compartilhados: types, utils, eslint-config, tsconfig",
+        "Healthcheck HTTP básico nos serviços",
+        "Gateway Nest com Swagger placeholder e rate-limiter plugado"
+      ],
+      "tasks": [
+        { "category": "Infra", "title": "Configurar Turborepo (workspaces, turbo.json, scripts build/dev)" },
+        { "category": "Infra", "title": "Criar Dockerfiles dos 4 apps (targets dev) + compose com volumes e rede" },
+        { "category": "Infra", "title": "Criar .env.example para web, api-gateway, auth-service, tasks-service, notifications-service" },
+        { "category": "Gateway", "title": "Scaffold Nest HTTP + Swagger placeholder + rate limiter" },
+        { "category": "Packages", "title": "Criar @types (DTOs iniciais: User, Tokens, Task, Comment)" },
+        { "category": "Docs", "title": "Instruções de execução e troubleshooting (make dev / npm run dev)" }
+      ],
+      "acceptance_criteria": [
+        "docker compose up sobe tudo sem crash",
+        "GET /api/health responde 200 no gateway"
+      ],
+      "dependencies": []
+    },
+    {
+      "id": "S2",
+      "name": "Autenticação (Auth Service + API Gateway) e Base do Front",
+      "objective": "Implementar login/register com JWT (access/refresh), proteger rotas e documentar.",
+      "concepts": [
+        "Nest Passport (JWT), Guards/Strategies",
+        "DTOs com class-validator",
+        "Hashing (argon2/bcrypt)",
+        "Fluxo de refresh token",
+        "Swagger/OpenAPI"
+      ],
+      "deliverables": [
+        "auth-service com User + migrations + register/login/refresh",
+        "api-gateway com guards e proxy de /api/auth/*",
+        "Front web com páginas Login/Register usando react-hook-form + zod e estado de auth (Context/Zustand)"
+      ],
+      "tasks": [
+        { "category": "Auth", "title": "Entities User e (opcional) RefreshToken; repositórios TypeORM e serviços" },
+        { "category": "Auth", "title": "Endpoints /auth/register, /auth/login, /auth/refresh" },
+        { "category": "Gateway", "title": "Configurar estratégias de access/refresh + decorators @CurrentUser" },
+        { "category": "Front", "title": "Páginas Login/Register com validação, toasts, loading, persistência segura de tokens" },
+        { "category": "Docs", "title": "Fluxos de sequência (Mermaid) para login/refresh" }
+      ],
+      "acceptance_criteria": [
+        "Fluxo completo de auth OK (200) com expirações corretas",
+        "Swagger /api/docs descreve os 3 endpoints"
+      ],
+      "dependencies": ["S1"]
+    },
+    {
+      "id": "S3",
+      "name": "Domínio de Tarefas (Tasks Service) + RPC e Eventos",
+      "objective": "Modelar e expor CRUD de tarefas, atribuições, comentários e audit log via Nest microservices + RabbitMQ.",
+      "concepts": [
+        "Modelagem de domínio",
+        "RPC vs. eventos em mensageria",
+        "Idempotência",
+        "Paginação",
+        "CQRS leve (opcional)"
+      ],
+      "deliverables": [
+        "tasks-service com entidades Task, TaskAssignment (N:N), Comment, AuditLog",
+        "Migrations + validação por DTO",
+        "Gateway HTTP → RPC para leitura/escrita; publicação de eventos task.created, task.updated, task.comment.created"
+      ],
+      "tasks": [
+        { "category": "Tasks", "title": "Criar entities e índices (status, prazo, prioridade)" },
+        { "category": "Tasks", "title": "Use-cases: create/read/update/delete; assign/unassign; addComment/listComments; AuditLog automático" },
+        { "category": "Messaging", "title": "Definir canais/filas: tasks.rpc (RPC) e tasks.events (pub)" },
+        { "category": "Gateway", "title": "Rotas HTTP: /api/tasks, /api/tasks/:id, /api/tasks/:id/comments com paginação" },
+        { "category": "Docs", "title": "Tabela de mensagens (topic, payload, publisher/consumer)" }
+      ],
+      "acceptance_criteria": [
+        "CRUD e comentários via gateway com paginação",
+        "Criação/atualização/comentário publicam eventos no broker"
+      ],
+      "dependencies": ["S2"]
+    },
+    {
+      "id": "S4",
+      "name": "Notificações & WebSocket",
+      "objective": "Consumir eventos, persistir notificações e entregar em tempo real via WebSocket autenticado.",
+      "concepts": [
+        "Pub/Sub",
+        "Handshake WS com JWT",
+        "Rooms por usuário",
+        "Entrega at-least-once, retry/backoff"
+      ],
+      "deliverables": [
+        "notifications-service consumindo tasks.events e persistindo Notification",
+        "Gateway WS (/ws) autenticado com JWT",
+        "Eventos WS: task:created, task:updated, comment:new (endereçados aos usuários relevantes)"
+      ],
+      "tasks": [
+        { "category": "Notifications", "title": "Entity Notification (userId, type, payload, readAt=null)" },
+        { "category": "Broker", "title": "Consumer com ack manual e requeue on error" },
+        { "category": "Gateway WS", "title": "Guards de socket (JWT) e rooms user:{id}" },
+        { "category": "Gateway WS", "title": "Emitir eventos WS para assignments/autor/participantes" },
+        { "category": "Docs", "title": "Diagrama pub/sub (ASCII) do fluxo de notificações" }
+      ],
+      "acceptance_criteria": [
+        "Criar tarefa atribuída a X → X recebe task:created em tempo real",
+        "Comentário em tarefa onde Y participa → Y recebe comment:new"
+      ],
+      "dependencies": ["S3"]
+    },
+    {
+      "id": "S5",
+      "name": "UI de Tarefas (Lista, Filtro, Detalhe, Comentários) + Realtime",
+      "objective": "Construir UI funcional com boa UX e integrar WS.",
+      "concepts": [
+        "TanStack Router",
+        "shadcn/ui + Tailwind",
+        "react-hook-form + zod",
+        "TanStack Query (opcional)",
+        "Optimistic updates"
+      ],
+      "deliverables": [
+        "Páginas: Lista de Tarefas (filtros/busca/paginação) e Detalhe (status/atribuições/comentários)",
+        "≥5 componentes shadcn/ui, skeleton loaders, toasts",
+        "Cliente WS conectado com badge/toasts de notificação"
+      ],
+      "tasks": [
+        { "category": "Web", "title": "Layout base e rotas /login, /tasks, /tasks/:id" },
+        { "category": "Web", "title": "Lista com filtros (status, prioridade, prazo) e busca por título" },
+        { "category": "Web", "title": "Form de criação/edição com zod schemas compartilhados de @types" },
+        { "category": "Web", "title": "Aba de comentários com paginação (infinita ou carregar mais)" },
+        { "category": "Web", "title": "Integração WS: toasts/badges e atualização em tempo real" },
+        { "category": "Docs", "title": "GIF/roteiro demonstrando fluxo E2E" }
+      ],
+      "acceptance_criteria": [
+        "Fluxo: login → criar tarefa → atribuir usuário → notificação em tempo real → comentar → UI atualiza sem refresh"
+      ],
+      "dependencies": ["S2", "S3", "S4"]
+    },
+    {
+      "id": "S6",
+      "name": "Observabilidade, Qualidade e Segurança",
+      "objective": "Endurecer o sistema com testes, logs, healthchecks e hardening.",
+      "concepts": [
+        "Logging estruturado (Pino/Winston)",
+        "Exception filters/interceptors",
+        "Unit/e2e tests (Jest)",
+        "Rate limiting, CORS, Helmet",
+        "Health/Readiness"
+      ],
+      "deliverables": [
+        "Logs estruturados com correlação (request-id)",
+        "Health/Readiness nos serviços",
+        "Testes unitários principais (auth, tasks) + smoke e2e",
+        "Rate limit (10 req/s), CORS e Helmet no gateway",
+        "Seeds mínimos para demo"
+      ],
+      "tasks": [
+        { "category": "Obs", "title": "Logger global + middleware de request-id + mask de campos sensíveis" },
+        { "category": "Security", "title": "Helmet, CORS e validação global (whitelist + forbidNonWhitelisted)" },
+        { "category": "Tests", "title": "Unit: auth (hash/compare, expiração), tasks (create/update/assign)" },
+        { "category": "Tests", "title": "e2e smoke: login → create task → comment (em ambiente docker)" },
+        { "category": "DB", "title": "Seeds mínimas para demo" },
+        { "category": "Docs", "title": "Known issues e Next steps" }
+      ],
+      "acceptance_criteria": [
+        "`npm test` passando localmente",
+        "Health /health e /ready respondendo 200",
+        "Rate limit ativo no gateway"
+      ],
+      "dependencies": ["S1", "S2", "S3", "S4", "S5"]
+    },
+    {
+      "id": "S7",
+      "name": "Polimento, Performance & Entrega",
+      "objective": "Finalizar documentação, ajustes de performance e preparo de entrega.",
+      "concepts": [
+        "Tuning TypeORM (pool, índices)",
+        "Docker multi-stage",
+        "Ambientes prod-like",
+        "Roteiros de demo",
+        "Diagramas de arquitetura"
+      ],
+      "deliverables": [
+        "README final (arquitetura, decisões/trade-offs, tempo por parte, instruções, troubleshooting)",
+        "Compose com perfis dev/prod-lite + Dockerfiles multi-stage",
+        "Ajustes de índices (status, dueDate, createdAt) e revisão de queries críticas",
+        "Bug bash e checklist de aceite",
+        "Swagger revisado com exemplos de responses"
+      ],
+      "tasks": [
+        { "category": "Perf", "title": "Criar índices e checar planos (EXPLAIN) dos endpoints mais usados" },
+        { "category": "Build", "title": "Multi-stage Docker; reduzir tamanho de imagens; revisar envs" },
+        { "category": "Docs", "title": "Diagrama (mermaid/png), tabela de mensagens RabbitMQ e matriz de permissões" },
+        { "category": "QA", "title": "Roteiro de testes manuais (checklist) + bug bash" },
+        { "category": "Entrega", "title": "Revisar Swagger e exemplos de responses" }
+      ],
+      "acceptance_criteria": [
+        "Subir prod-lite localmente e executar demo E2E sem passos manuais além de .env",
+        "README cobre todos os itens exigidos no desafio"
+      ],
+      "dependencies": ["S1", "S2", "S3", "S4", "S5", "S6"]
+    }
+  ]
+}
