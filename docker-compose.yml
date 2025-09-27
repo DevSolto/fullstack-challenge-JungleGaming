@@ -1,0 +1,41 @@
+# docker-compose.yml
+version: '3.8'
+
+services:
+  db:
+    image: postgres:17.5-alpine3.21
+    container_name: db
+    ports: ['5432:5432']
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: challenge_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks: [challenge-net]
+    profiles: ['infra']
+
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: rabbitmq
+    ports:
+      - '5672:5672'    # AMQP
+      - '15672:15672'  # painel
+    environment:
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: admin
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks: [challenge-net]
+    profiles: ['infra']
+
+  # Quando for pra produção/dev-full, adicionamos os serviços aqui (gateway, auth, tasks, notifications, web)
+  # e um profile: ['app'] para eles.
+
+volumes:
+  postgres_data:
+  rabbitmq_data:
+
+networks:
+  challenge-net:
+    driver: bridge
