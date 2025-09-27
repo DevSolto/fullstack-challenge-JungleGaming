@@ -21,9 +21,12 @@ services:
     image: rabbitmq:3.13-management-alpine
     container_name: rabbitmq
     restart: unless-stopped
+    hostname: rabbitmq
     ports:
       - "5672:5672"
       - "15672:15672"
+    expose:
+      - "5672"
     environment:
       RABBITMQ_DEFAULT_USER: admin
       RABBITMQ_DEFAULT_PASS: admin
@@ -48,6 +51,7 @@ services:
       NODE_ENV: development
       PORT: 3001
       CHOKIDAR_USEPOLLING: "true"
+      RABBITMQ_URL: amqp://admin:admin@rabbitmq:5672
     volumes:
       - .:/app
       - pnpm_store:/root/.local/share/pnpm
