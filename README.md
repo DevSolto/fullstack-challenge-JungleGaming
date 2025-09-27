@@ -23,6 +23,84 @@ Construir um **Sistema de Gestão de Tarefas Colaborativo** com autenticação s
 
 ---
 
+## 🚀 Sprint S1 — Como rodar
+
+### 1. Preparar variáveis de ambiente
+
+Copie cada arquivo `.env.example` para seu respectivo `.env` (ou `.env.local` no caso do front-end) antes de subir os containers:
+
+```bash
+cp apps/api-gateway/.env.example apps/api-gateway/.env
+cp apps/auth-service/.env.example apps/auth-service/.env
+cp apps/tasks-service/.env.example apps/tasks-service/.env
+cp apps/notifications-service/.env.example apps/notifications-service/.env
+cp apps/web/.env.example apps/web/.env.local
+```
+
+> Sinta-se à vontade para ajustar os valores conforme necessário para o seu ambiente local.
+
+#### apps/api-gateway/.env
+
+* `NODE_ENV`: modo de execução (default `development`).
+* `PORT`: porta exposta pelo gateway HTTP (`3001`).
+* `SWAGGER_ENABLED`: habilita a UI do Swagger (`true`).
+* `RATE_LIMIT_WINDOW_MS`: janela do rate limit em milissegundos (`1000`).
+* `RATE_LIMIT_MAX`: quantidade máxima de requisições por janela (`10`).
+
+#### apps/auth-service/.env
+
+* `NODE_ENV`: modo de execução (`development`).
+* `PORT`: porta do microserviço de autenticação (`3002`).
+* `DATABASE_URL`: URL de conexão com o PostgreSQL (usa o serviço `db`).
+* `JWT_ACCESS_SECRET`: segredo usado para assinar tokens de acesso.
+* `JWT_REFRESH_SECRET`: segredo usado para assinar tokens de refresh.
+
+#### apps/tasks-service/.env
+
+* `NODE_ENV`: modo de execução (`development`).
+* `PORT`: porta do microserviço de tarefas (`3003`).
+* `DATABASE_URL`: URL de conexão com o PostgreSQL.
+* `RABBITMQ_URL`: URL de conexão com o broker RabbitMQ.
+
+#### apps/notifications-service/.env
+
+* `NODE_ENV`: modo de execução (`development`).
+* `PORT`: porta do microserviço de notificações (`3004`).
+* `DATABASE_URL`: URL de conexão com o PostgreSQL.
+* `RABBITMQ_URL`: URL de conexão com o broker RabbitMQ.
+
+#### apps/web/.env.local
+
+* `VITE_API_URL`: URL base para chamadas HTTP ao gateway (`http://localhost:3001/api`).
+* `VITE_WS_URL`: endpoint WebSocket esperado (`ws://localhost:3001/ws`).
+
+### 2. Subir a stack S1
+
+Execute o comando abaixo na raiz do repositório para buildar e iniciar todos os serviços da Sprint S1:
+
+```bash
+docker compose -f docker-compose.s1.patched.yml up -d --build
+```
+
+### 3. Endpoints disponíveis após o `up`
+
+* `GET /api/health` — healthcheck do API Gateway.
+* `GET /api/docs` — documentação Swagger exposta pelo gateway.
+
+### 4. Dicas rápidas de debug
+
+* Logs em tempo real do gateway: `docker compose logs -f api-gateway`.
+* Verifique os healthchecks automáticos: os containers `db` (PostgreSQL) e `rabbitmq` devem aparecer como `healthy` após o boot.
+* Rate limit ativo: o gateway retorna **HTTP 429** quando o limite de 10 requisições/segundo for ultrapassado.
+
+### 5. Outros comandos úteis & próximos passos
+
+* Instalar dependências localmente: `pnpm install`.
+* Rodar o front-end fora do Docker: `pnpm --filter web dev`.
+* A Sprint S2+ seguirá o mesmo padrão; novas instruções serão adicionadas em futuras seções deste README.
+
+---
+
 ## 🧱 Requisitos Funcionais
 
 ### Autenticação & Gateway
