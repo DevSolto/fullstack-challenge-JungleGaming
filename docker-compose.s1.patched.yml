@@ -63,7 +63,7 @@ services:
       sh -lc "
         corepack enable &&
         pnpm -v &&
-        pnpm -w install --frozen-lockfile=false &&
+        pnpm install --recursive --filter @apps/api-gateway... --frozen-lockfile=false &&
         pnpm -F @apps/api-gateway start:dev
       "
 
