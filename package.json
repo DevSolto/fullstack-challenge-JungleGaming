@@ -14,6 +14,7 @@
     "clean": "turbo run clean --parallel"
   },
   "devDependencies": {
+    "@types/node": "^22.18.6",
     "@typescript-eslint/eslint-plugin": "^8.44.1",
     "@typescript-eslint/parser": "^8.44.1",
     "eslint": "^9.10.0",

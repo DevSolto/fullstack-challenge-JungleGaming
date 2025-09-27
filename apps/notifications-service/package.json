@@ -10,13 +10,13 @@
     "clean": "rimraf dist || true"
   },
   "devDependencies": {
+    "@repo/tsconfig": "workspace:*",
     "@typescript-eslint/eslint-plugin": "^8.44.1",
     "@typescript-eslint/parser": "^8.44.1",
     "eslint": "^9.10.0",
     "typescript": "^5.6.2"
   },
   "dependencies": {
-    "@repo/tsconfig": "workspace:*",
     "@repo/types": "workspace:*",
     "@repo/utils": "workspace:*"
   }
