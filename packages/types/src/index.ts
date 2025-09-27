@@ -12,6 +12,7 @@ export interface TokensDTO {
   accessToken: string;
   refreshToken: string;
   expiresIn: number;
+  refreshTokenExpiresIn?: number;
 }
 
 export interface TaskDTO {
@@ -33,13 +34,4 @@ export interface CommentDTO {
   authorId: string;
   body: string;
   createdAt: string;
-}
-
-export interface NotificationDTO {
-  id: string;
-  userId: string;
-  type: "task:created" | "task:updated" | "comment:new";
-  payload: any;
-  createdAt: string;
-  readAt?: string | null;
 }
