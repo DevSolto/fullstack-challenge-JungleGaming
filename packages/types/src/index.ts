@@ -35,3 +35,8 @@ export interface CommentDTO {
   body: string;
   createdAt: string;
 }
+
+export interface HealthResponse {
+  status: "ok";
+  uptime?: number;
+}
