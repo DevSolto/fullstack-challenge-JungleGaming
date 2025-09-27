@@ -97,6 +97,7 @@ docker compose -f docker-compose.s1.patched.yml up -d --build
 
 * Instalar dependências localmente: `pnpm install`.
 * Rodar o front-end fora do Docker: `pnpm --filter web dev`.
+* Rodar o lint em todos os workspaces: `pnpm lint:repo`.
 * A Sprint S2+ seguirá o mesmo padrão; novas instruções serão adicionadas em futuras seções deste README.
 
 ---
