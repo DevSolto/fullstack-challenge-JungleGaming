@@ -1,0 +1,11 @@
+@baseUrl = http://localhost:3001/api
+
+### Login with an existing user
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+Accept: application/json
+
+{
+  "email": "player@example.com",
+  "password": "SuperSecurePassword123"
+}
