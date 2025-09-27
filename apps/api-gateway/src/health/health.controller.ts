@@ -1,9 +1,10 @@
 import { Controller, Get } from '@nestjs/common';
+import { HealthResponse } from '@repo/types';
 
 @Controller('health')
 export class HealthController {
   @Get()
-  ok() {
-    return { status: 'ok' };
+  ok(): HealthResponse {
+    return { status: 'ok', uptime: process.uptime() };
   }
 }
