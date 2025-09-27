@@ -1,26 +1,10 @@
 import { Module } from '@nestjs/common';
-import { ClientsModule, Transport } from '@nestjs/microservices';
-import { AuthService } from './auth.service';
-import { AuthController } from './auth.controller';
-import { AUTH_SERVICE_RABBITMQ } from './consts';
+import { ConfigModule } from '@nestjs/config';
+import { HttpModule } from '@nestjs/axios';
+import { GatewayAuthController } from './auth.controller';
 
 @Module({
-  imports: [
-    ClientsModule.register([
-      {
-        name: AUTH_SERVICE_RABBITMQ,
-        transport: Transport.RMQ,
-        options: {
-          urls: ['amqp://admin:admin@localhost:5672'],
-          queue: 'auth_queue',
-          queueOptions: {
-            durable: true,
-          },
-        },
-      },
-    ]),
-  ],
-  controllers: [AuthController],
-  providers: [AuthService],
+  imports: [ConfigModule.forRoot({ isGlobal: true }), HttpModule],
+  controllers: [GatewayAuthController],
 })
-export class AuthModule {}
+export class GatewayAuthModule {}
